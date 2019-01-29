@@ -3,7 +3,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-
+const _ = require('lodash');
 require('dotenv').config()
 
 const app = express();
@@ -15,6 +15,15 @@ const itemsSchema = new mongoose.Schema({
 });
 
 const Item = mongoose.model("Item", itemsSchema);
+
+
+const listSchema = new mongoose.Schema({
+  name: String,
+  items: [itemsSchema]
+});
+
+const List = mongoose.model("List", listSchema);
+
 
 const todo1 = new Item({
   name:"Welcome to your todo list"
@@ -49,9 +58,7 @@ app.get('/', (req, res) => {
     } else {
       res.render("list", {listTitle: "Today", newListItems: results });
     }
-
   });
-
 });
 
 app.post('/', (req, res) => {
@@ -78,8 +85,23 @@ app.post('/delete', (req, res) => {
   })
 });
 
-app.get('/work', (req, res) => {
-  res.render('list', {listTitle: "Work List", newListItems: workItems});
+app.get('/:customList', (req, res) => {
+  const listName = req.params.customList;
+
+  List.findOne({name: _.capitalize(listName)}, (err, results) => {
+    if(!err){
+      if (!results) {
+        const list = new List({
+          name: _.capitalize(listName),
+          items: defaultItems
+        });
+        list.save();
+        res.redirect('/' + listName);
+      } else {
+        res.render('list', {listTitle: _.capitalize(results.name), newListItems: results.items });
+      }
+    } 
+  });
 });
 
 app.get('/about', (req, res) => {
