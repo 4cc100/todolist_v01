@@ -30,15 +30,6 @@ const todo3 = new Item({
 
 const defaultItems = [todo1, todo2, todo3]
 
-// Item.insertMany(defaultItems, (err) => {
-//   if (err) {
-//     console.log(err);
-//   } else {
-//     console.log("Defaults added succesfully");
-//   }
-// });
-
-
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(express.static('public'));
@@ -46,7 +37,19 @@ app.use(express.static('public'));
 app.get('/', function(req, res){
  
   Item.find({}, (err, results) => {
-    res.render("list", {listTitle: "Today", newListItems: results });
+    if(results.length === 0) {
+      Item.insertMany(defaultItems, (err) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("Defaults added succesfully");
+        }
+      });
+      res.redirect('/');
+    } else {
+      res.render("list", {listTitle: "Today", newListItems: results });
+    }
+
   });
 
 });
