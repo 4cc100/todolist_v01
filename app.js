@@ -76,7 +76,7 @@ app.post('/', (req, res) => {
     List.findOne({name: listName}, (err, results) => {
       results.items.push(item);
       results.save();
-      res.redirect('/' + listName);
+      res.redirect('/' + _.lowerCase(listName));
     });
   }
 
@@ -85,14 +85,23 @@ app.post('/', (req, res) => {
 
 app.post('/delete', (req, res) => {
   const checkedItemId = req.body.checkbox;
-  Item.findByIdAndRemove({_id: checkedItemId}, (err) => {
-    if(err) {
-      console.log(err);
-    } else {
-      console.log("Deleted item successfully");
-      res.redirect('/');
-    }
-  })
+  const listName = req.body.listName;
+
+  if (listName === "Today") {
+    Item.findByIdAndRemove({_id: checkedItemId}, (err) => {
+      if (!err) {
+        console.log("Deleted item successfully");
+        res.redirect('/');
+      }
+    });
+  } else {
+    List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}, (err, results)=>{
+      if (!err) {
+        res.redirect('/' + _.lowerCase(listName));
+      }
+    });
+  }
+ 
 });
 
 app.get('/:customList', (req, res) => {
@@ -100,14 +109,14 @@ app.get('/:customList', (req, res) => {
 
 
   List.findOne({name: _.capitalize(listName)}, (err, results) => {
-    if(!err){
+    if (!err){
       if (!results) {
         const list = new List({
           name: _.capitalize(listName),
           items: defaultItems
         });
         list.save();
-        res.redirect('/' + listName);
+        res.redirect('/' + _.lowerCase(listName));
       } else {
         res.render('list', {listTitle: _.capitalize(results.name), newListItems: results.items });
       }
